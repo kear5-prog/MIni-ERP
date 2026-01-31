@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-qhkwi#84x9bgp^zsnw6#inqaf-b999q@wv5=%hojy(mxt_%15r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    "mini-erp-production-3afa.up.railway.app",
+    "127.0.0.1",
+    "localhost",
+]
+
 
 
 # Application definition

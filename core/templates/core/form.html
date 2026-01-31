@@ -1,0 +1,13 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h3 class="mb-3">{{ title }}</h3>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-secondary" href="javascript:history.back()">Cancel</a>
+  </div>
+</form>
+{% endblock %}

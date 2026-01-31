@@ -1,0 +1,53 @@
+{% extends "core/base.html" %}
+{% block content %}
+<h3 class="mb-3">New Sales Order</h3>
+
+<form method="post" class="card card-body">
+  {% csrf_token %}
+  <h5>Header</h5>
+  {{ order_form.as_p }}
+
+  <hr>
+  <h5>Order Lines</h5>
+
+  {{ formset.management_form }}
+  <table class="table">
+    <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Delete</th></tr></thead>
+    <tbody>
+      {% for form in formset %}
+        <tr>
+          <td>{{ form.product }}</td>
+          <td>{{ form.quantity }}</td>
+          <td>{{ form.unit_price }}</td>
+          <td>{{ form.DELETE }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="d-flex gap-2">
+    <button class="btn btn-primary" type="submit">Save</button>
+    <a class="btn btn-secondary" href="{% url 'order_list' %}">Cancel</a>
+  </div>
+</form>
+<script>
+  // Build a lookup dict: product_id -> price
+  const productPrice = {
+    {% for p in formset.forms.0.fields.product.queryset %}
+      {{ p.id }}: "{{ p.price }}",
+    {% endfor %}
+  };
+
+  // For each row: when product changes, fill unit_price
+  document.querySelectorAll('select[name$="-product"]').forEach((sel) => {
+    sel.addEventListener("change", (e) => {
+      const productId = e.target.value;
+      const row = e.target.closest("tr");
+      const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
+      if (unitPriceInput && productPrice[productId]) {
+        unitPriceInput.value = productPrice[productId];
+      }
+    });
+  });
+</script>
+{% endblock %}

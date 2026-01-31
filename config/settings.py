@@ -25,15 +25,9 @@ SECRET_KEY = 'django-insecure-qhkwi#84x9bgp^zsnw6#inqaf-b999q@wv5=%hojy(mxt_%15r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "mini-erp-production-3afa.up.railway.app",
-    "localhost",
-    "127.0.0.1",
-    
-]
-CSRF_TRUSTED_ORIGINS = [
-    "https://mini-erp-production-3afa.up.railway.app",
-]
+ALLOWED_HOSTS = ["mini-erp-production-3afa.up.railway.app", "localhost", "127.0.0.1"]
+CSRF_TRUSTED_ORIGINS = ["https://mini-erp-production-3afa.up.railway.app"]
+
 
 
 

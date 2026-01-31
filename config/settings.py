@@ -25,12 +25,14 @@ SECRET_KEY = 'django-insecure-qhkwi#84x9bgp^zsnw6#inqaf-b999q@wv5=%hojy(mxt_%15r
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    "mini-erp-production-3afa.up.railway.app",
-    ".up.railway.app",
+import os
+
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",") if os.getenv("ALLOWED_HOSTS") else [
     "localhost",
     "127.0.0.1",
+    ".up.railway.app",
 ]
+
 
 
 

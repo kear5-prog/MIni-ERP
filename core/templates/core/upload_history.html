@@ -1,0 +1,28 @@
+﻿
+{% extends 'core/base.html' %}
+{% block title %}Upload Historical Data{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-6">
+    <div class="card">
+      <div class="card-header">
+        <h3 class="mb-0">Upload Historical Data</h3>
+      </div>
+      <div class="card-body">
+        <p class="text-muted">
+          Please upload a CSV file with columns: 
+          <strong>SKU code</strong>, <strong>Product Description</strong>, 
+          <strong>UOM</strong>, <strong>Consummption</strong>, <strong>Unit Price</strong>, 
+          <strong>Month</strong>, <strong>Year</strong>.
+        </p>
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          {{ form.as_p }}
+          <button type="submit" class="btn btn-primary">Upload Data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+

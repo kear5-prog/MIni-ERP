@@ -1,0 +1,68 @@
+{% extends 'core/base.html' %}
+{% block title %}PO {{ order.id }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Purchase Order: PO-{{ order.id }}</h2>
+    <a href="{% url 'purchase_order_list' %}" class="btn btn-outline-secondary">Back to List</a>
+</div>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h5>Details</h5>
+        <p><strong>Vendor:</strong> {{ order.vendor.name }}</p>
+        <p><strong>Date:</strong> {{ order.created_at|date:"Y-m-d H:i" }}</p>
+        <p><strong>Status:</strong>
+            {% if order.status == 'draft' %}
+            <span class="badge bg-warning text-dark">Draft</span>
+            {% else %}
+            <span class="badge bg-success">Confirmed</span>
+            {% endif %}
+        </p>
+
+        {% if order.status == 'draft' %}
+        <form method="post" action="{% url 'purchase_order_confirm' order.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-success">Confirm PO (Add to Stock)</button>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Order Lines</div>
+    <div class="card-body p-0">
+        <table class="table table-striped mb-0">
+            <thead>
+                <tr>
+                    <th>Product</th>
+                    <th>Quantity</th>
+                    <th>UOM</th>
+                    <th>Unit Price</th>
+                    <th>Subtotal</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.product.name }} ({{ item.product.sku }})</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>{{ item.product.uom }}</td>
+                    <td>${{ item.unit_price }}</td>
+                    <td>${% widthratio item.quantity 1 item.unit_price %}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5">No items in this PO.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <th colspan="4" class="text-end">Total:</th>
+                    <th>${{ order.total_amount }}</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+{% endblock %}

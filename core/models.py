@@ -1,11 +1,18 @@
-from django.db import models, transaction
+﻿from django.db import models, transaction
 from django.core.exceptions import ValidationError
 
 
 
 class Product(models.Model):
+    UOM_CHOICES = [
+        ('PCS', 'PCS'),
+        ('KG', 'KG'),
+        ('L', 'L'),
+        ('Unit', 'Unit'),
+    ]
     name = models.CharField(max_length=150)
     sku = models.CharField(max_length=50, unique=True)
+    uom = models.CharField(max_length=10, choices=UOM_CHOICES, default='PCS')
     price = models.DecimalField(max_digits=10, decimal_places=2)
     stock_qty = models.PositiveIntegerField(default=0)
 
@@ -55,6 +62,17 @@ class SalesOrder(models.Model):
                 product.stock_qty -= item.quantity
                 product.save(update_fields=["stock_qty"])
 
+                HistoricalData.objects.create(
+                    customer=self.customer,
+                    sku=product,
+                    product_name=product.name,
+                    uom=product.uom,
+                    qty=item.quantity,
+                    unit_price=item.unit_price,
+                    month=self.created_at.month,
+                    year=self.created_at.year
+                )
+
             self.status = self.Status.CONFIRMED
             self.save(update_fields=["status"])
 
@@ -74,3 +92,90 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.product} x {self.quantity}"
+
+class Vendor(models.Model):
+    name = models.CharField(max_length=150)
+    phone = models.CharField(max_length=30, blank=True)
+    address = models.TextField(blank=True)
+
+    def __str__(self):
+        return self.name
+
+
+class PurchaseOrder(models.Model):
+    class Status(models.TextChoices):
+        DRAFT = "draft", "Draft"
+        CONFIRMED = "confirmed", "Confirmed"
+
+    vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name="purchase_orders")
+    created_at = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.DRAFT
+    )
+
+    def confirm(self):
+        if self.status == self.Status.CONFIRMED:
+            return
+
+        items = self.items.select_related("product").all()
+        if not items:
+            raise ValidationError("Cannot confirm: no order lines.")
+
+        with transaction.atomic():
+            for item in items:
+                product = item.product
+                product.stock_qty += item.quantity
+                product.save(update_fields=["stock_qty"])
+
+                HistoricalData.objects.create(
+                    customer=None,
+                    sku=product,
+                    product_name=product.name,
+                    uom=product.uom,
+                    qty=item.quantity,
+                    unit_price=item.unit_price,
+                    month=self.created_at.month,
+                    year=self.created_at.year
+                )
+
+            self.status = self.Status.CONFIRMED
+            self.save(update_fields=["status"])
+
+    def __str__(self):
+        return f"PO-{self.id}"
+        
+    @property
+    def total_amount(self):
+        return sum((i.quantity * i.unit_price) for i in self.items.all())
+
+
+class PurchaseOrderItem(models.Model):
+    order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, related_name="purchase_order_items")
+    quantity = models.PositiveIntegerField()
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.product} x {self.quantity}"
+
+
+class HistoricalData(models.Model):
+    customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
+    sku = models.ForeignKey(Product, to_field='sku', on_delete=models.PROTECT, db_column='sku')
+    product_name = models.CharField(max_length=150)
+    uom = models.CharField(max_length=10)
+    qty = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    unit_price = models.DecimalField(max_digits=10, decimal_places=2)
+    month = models.PositiveIntegerField()
+    year = models.PositiveIntegerField()
+
+    class Meta:
+        verbose_name = "Order Line"
+        verbose_name_plural = "Order Lines"
+
+    def __str__(self):
+        return f"{self.sku_id} - {self.month}/{self.year}"
+
+

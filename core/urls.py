@@ -1,3 +1,4 @@
+﻿
 from django.urls import path
 from . import views
 
@@ -16,4 +17,21 @@ urlpatterns = [
     path("orders/new/", views.order_create, name="order_create"),
     path("orders/<int:pk>/", views.order_detail, name="order_detail"),
     path("orders/<int:pk>/confirm/", views.order_confirm, name="order_confirm"),
+
+    # Vendors
+    path("vendors/", views.vendor_list, name="vendor_list"),
+    path("vendors/new/", views.vendor_create, name="vendor_create"),
+    path("vendors/<int:pk>/edit/", views.vendor_edit, name="vendor_edit"),
+
+    # Purchase Orders
+    path("purchase_orders/", views.purchase_order_list, name="purchase_order_list"),
+    path("purchase_orders/new/", views.purchase_order_create, name="purchase_order_create"),
+    path("purchase_orders/<int:pk>/", views.purchase_order_detail, name="purchase_order_detail"),
+    path("purchase_orders/<int:pk>/confirm/", views.purchase_order_confirm, name="purchase_order_confirm"),
+
+    # Historical Data Upload
+    path("upload-history/", views.upload_historical_data, name="upload_history"),
+    
+    # Forecasting
+    path("forecast/", views.forecast_dashboard, name="forecast_dashboard"),
 ]

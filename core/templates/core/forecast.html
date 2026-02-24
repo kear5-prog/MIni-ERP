@@ -1,0 +1,155 @@
+{% extends "core/base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col">
+            <h2 class="fw-bold">Demand Forecasting Module</h2>
+            <p class="text-muted">Analyze simple time-series forecasting models using historical order line data
+                (Academic Mode).</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Configuration Sidebar -->
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Forecast Parameters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="{% url 'forecast_dashboard' %}">
+                        {% csrf_token %}
+
+                        <div class="mb-3">
+                            <label for="sku" class="form-label fw-bold">Select SKU</label>
+                            <select name="sku" id="sku" class="form-select" required>
+                                <option value="" disabled {% if not selected_sku_list %}selected{% endif %}>-- Choose
+                                    Product --</option>
+                                {% for p in products %}
+                                <option value="{{ p.id }}" {% if p.id in selected_sku_list %}selected{% endif %}>{{
+                                    p.sku }} - {{ p.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="mode" class="form-label fw-bold">Evaluation Mode</label>
+                            <select name="mode" id="mode" class="form-select" required>
+                                <option value="Compare" {% if 'Compare' in selected_mode_list %}selected{% endif %}>
+                                    Compare Methods (VS)</option>
+                                <option value="SMA" {% if 'SMA' in selected_mode_list %}selected{% endif %}>Simple
+                                    Moving Average (SMA) Only</option>
+                                <option value="SES" {% if 'SES' in selected_mode_list %}selected{% endif %}>Simple
+                                    Exponential Smoothing (SES) Only</option>
+                                <option value="HW" {% if 'HW' in selected_mode_list %}selected{% endif %}>Holt-Winters
+                                    Only</option>
+                            </select>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col">
+                                <label for="horizon" class="form-label">Forecast Horizon (Months)</label>
+                                <input type="number" name="horizon" id="horizon" class="form-control"
+                                    value="{{ request.POST.horizon|default:6 }}" min="1">
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6 class="text-muted mb-3">Model Hyperparameters</h6>
+
+                        <div class="mb-3">
+                            <label for="sma_window" class="form-label">SMA Window (<var>k</var>)</label>
+                            <input type="number" name="sma_window" id="sma_window" class="form-control form-control-sm"
+                                value="{{ request.POST.sma_window|default:3 }}" min="1">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="ses_alpha" class="form-label">SES Smoothing Level (<var>α</var>)</label>
+                            <input type="number" step="0.01" name="ses_alpha" id="ses_alpha"
+                                class="form-control form-control-sm" value="{{ request.POST.ses_alpha }}"
+                                placeholder="Auto-estimate if blank" min="0" max="1">
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="hw_season" class="form-label">HW Seasonal Periods (<var>m</var>)</label>
+                            <input type="number" name="hw_season" id="hw_season" class="form-control form-control-sm"
+                                value="{{ request.POST.hw_season|default:12 }}" min="2"
+                                help_text="12 for monthly data (yearly cycle)">
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg">Run Forecast</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Output Main Panel -->
+        <div class="col-md-8">
+            {% if error %}
+            <div class="alert alert-danger" role="alert">
+                <i class="bi bi-exclamation-triangle-fill flex-shrink-0 me-2"></i>
+                {{ error }}
+            </div>
+            {% endif %}
+
+            {% if chart_html %}
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Forecast Visualization</h5>
+                </div>
+                <div class="card-body p-0">
+                    {{ chart_html|safe }}
+                </div>
+            </div>
+            {% endif %}
+
+            {% if metrics %}
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Evaluation Metrics</h5>
+                    {% if best_method %}
+                    <span class="badge bg-success text-white py-2 px-3">
+                        Best Recommended: {{ best_method.method }} (Lowest MAPE)
+                    </span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-bordered text-center align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Rank</th>
+                                    <th>Forecasting Method</th>
+                                    <th>MAPE (%) <br><small class="text-muted">Mean Absolute Percentage Error</small>
+                                    </th>
+                                    <th>RMSE <br><small class="text-muted">Root Mean Square Error</small></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for m in metrics %}
+                                <tr class="{% if m.rank == 1 %}table-success fw-bold{% endif %}">
+                                    <td>#{{ m.rank }}</td>
+                                    <td>{{ m.method }}</td>
+                                    <td>{{ m.mape|default:"N/A" }}</td>
+                                    <td>{{ m.rmse|default:"N/A" }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if not chart_html and not error %}
+            <div class="text-center py-5 text-muted border border-dashed rounded bg-light">
+                <p class="mb-0 fs-5">Configure parameters and click "Run Forecast" to see the output.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

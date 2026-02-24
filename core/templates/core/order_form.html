@@ -12,18 +12,37 @@
 
   {{ formset.management_form }}
   <table class="table">
-    <thead><tr><th>Product</th><th>Qty</th><th>Unit Price</th><th>Delete</th></tr></thead>
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Qty</th>
+        <th>Unit Price</th>
+        <th>Delete</th>
+      </tr>
+    </thead>
     <tbody>
       {% for form in formset %}
-        <tr>
-          <td>{{ form.product }}</td>
-          <td>{{ form.quantity }}</td>
-          <td>{{ form.unit_price }}</td>
-          <td>{{ form.DELETE }}</td>
-        </tr>
+      <tr>
+        <td>{{ form.product }}</td>
+        <td>{{ form.quantity }}</td>
+        <td>{{ form.unit_price }}</td>
+        <td>{{ form.DELETE }}</td>
+      </tr>
       {% endfor %}
     </tbody>
   </table>
+
+  <div class="d-none" id="empty-form">
+    <table>
+      <tr>
+        <td>{{ formset.empty_form.product }}</td>
+        <td>{{ formset.empty_form.quantity }}</td>
+        <td>{{ formset.empty_form.unit_price }}</td>
+        <td>{{ formset.empty_form.DELETE }}</td>
+      </tr>
+    </table>
+  </div>
+  <button type="button" class="btn btn-sm btn-success mb-3" id="add-line">+ Add Line</button>
 
   <div class="d-flex gap-2">
     <button class="btn btn-primary" type="submit">Save</button>
@@ -31,23 +50,51 @@
   </div>
 </form>
 <script>
-  // Build a lookup dict: product_id -> price
-  const productPrice = {
-    {% for p in formset.forms.0.fields.product.queryset %}
-      {{ p.id }}: "{{ p.price }}",
-    {% endfor %}
-  };
+  document.addEventListener("DOMContentLoaded", () => {
+    // Dynamic Add Line
+    const addLineBtn = document.getElementById("add-line");
+    const totalForms = document.querySelector('input[name$="-TOTAL_FORMS"]');
+    const formsetBody = document.querySelector(".table tbody");
 
-  // For each row: when product changes, fill unit_price
-  document.querySelectorAll('select[name$="-product"]').forEach((sel) => {
-    sel.addEventListener("change", (e) => {
-      const productId = e.target.value;
-      const row = e.target.closest("tr");
-      const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
-      if (unitPriceInput && productPrice[productId]) {
-        unitPriceInput.value = productPrice[productId];
-      }
-    });
+    // Verify elements exist, prevents crash on other pages if reused
+    if (addLineBtn && totalForms && formsetBody) {
+      const emptyFormTemplate = document.querySelector("#empty-form tbody").innerHTML;
+
+      addLineBtn.addEventListener("click", () => {
+        let formCount = parseInt(totalForms.value);
+        let newRow = emptyFormTemplate.replace(/__prefix__/g, formCount);
+        formsetBody.insertAdjacentHTML("beforeend", newRow);
+        totalForms.value = formCount + 1;
+
+        // Re-attach event listeners to new row
+        attachPriceListeners();
+      });
+    }
+
+    // Build a lookup dict: product_id -> price
+    const productPrice = {};
+    {% for p in formset.forms.0.fields.product.queryset %}
+    productPrice["{{ p.id }}"] = "{{ p.price }}";
+    {% endfor %}
+
+    function attachPriceListeners() {
+      // For each row: when product changes, fill unit_price
+      document.querySelectorAll('select[name$="-product"]').forEach((sel) => {
+        if (sel.dataset.listenerAttached) return;
+        sel.dataset.listenerAttached = "true";
+
+        sel.addEventListener("change", (e) => {
+          const productId = e.target.value;
+          const row = e.target.closest("tr");
+          const unitPriceInput = row.querySelector('input[name$="-unit_price"]');
+          if (unitPriceInput && productPrice[productId]) {
+            unitPriceInput.value = productPrice[productId];
+          }
+        });
+      });
+    }
+
+    attachPriceListeners();
   });
 </script>
 {% endblock %}

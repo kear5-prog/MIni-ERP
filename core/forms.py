@@ -1,6 +1,6 @@
-from django import forms
+﻿from django import forms
 from django.forms import inlineformset_factory
-from .models import Product, Customer, SalesOrder, OrderItem
+from .models import Product, Customer, SalesOrder, OrderItem, Vendor, PurchaseOrder, PurchaseOrderItem
 
 
 class ProductForm(forms.ModelForm):
@@ -28,3 +28,31 @@ OrderItemFormSet = inlineformset_factory(
     extra=1,
     can_delete=True,
 )
+
+class VendorForm(forms.ModelForm):
+    class Meta:
+        model = Vendor
+        fields = ["name", "phone", "address"]
+
+
+class PurchaseOrderForm(forms.ModelForm):
+    class Meta:
+        model = PurchaseOrder
+        fields = ["vendor"]
+
+
+PurchaseOrderItemFormSet = inlineformset_factory(
+    PurchaseOrder,
+    PurchaseOrderItem,
+    fields=["product", "quantity", "unit_price"],
+    extra=1,
+    can_delete=True,
+)
+
+
+class HistoricalDataUploadForm(forms.Form):
+    file = forms.FileField(label="Upload CSV File")
+
+
+
+

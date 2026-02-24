@@ -39,6 +39,7 @@ CSRF_TRUSTED_ORIGINS = ["https://mini-erp-production-3afa.up.railway.app"]
 
 INSTALLED_APPS = [
     'core.apps.CoreConfig',
+    'import_export',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -85,6 +86,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 import os
+import dj_database_url
 
 DATABASES = {
     "default": {
@@ -96,14 +98,7 @@ DATABASES = {
 # Railway provides DATABASE_URL for Postgres
 DATABASE_URL = os.environ.get("DATABASE_URL")
 if DATABASE_URL:
-    DATABASES["default"] = {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("PGDATABASE"),
-        "USER": os.environ.get("PGUSER"),
-        "PASSWORD": os.environ.get("PGPASSWORD"),
-        "HOST": os.environ.get("PGHOST"),
-        "PORT": os.environ.get("PGPORT", "5432"),
-    }
+    DATABASES["default"] = dj_database_url.parse(DATABASE_URL)
 
 
 

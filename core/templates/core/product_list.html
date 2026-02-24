@@ -6,16 +6,26 @@
 </div>
 
 <table class="table table-striped bg-white">
-  <thead><tr><th>SKU</th><th>Name</th><th>Price</th><th>Stock</th><th></th></tr></thead>
+  <thead>
+    <tr>
+      <th>SKU</th>
+      <th>Name</th>
+      <th>UOM</th>
+      <th>Price</th>
+      <th>Stock</th>
+      <th></th>
+    </tr>
+  </thead>
   <tbody>
     {% for p in products %}
-      <tr>
-        <td>{{ p.sku }}</td>
-        <td>{{ p.name }}</td>
-        <td>{{ p.price }}</td>
-        <td>{{ p.stock_qty }}</td>
-        <td><a class="btn btn-sm btn-outline-primary" href="{% url 'product_edit' p.pk %}">Edit</a></td>
-      </tr>
+    <tr>
+      <td>{{ p.sku }}</td>
+      <td>{{ p.name }}</td>
+      <td>{{ p.uom }}</td>
+      <td>{{ p.price }}</td>
+      <td>{{ p.stock_qty }}</td>
+      <td><a class="btn btn-sm btn-outline-primary" href="{% url 'product_edit' p.pk %}">Edit</a></td>
+    </tr>
     {% endfor %}
   </tbody>
 </table>
